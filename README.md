@@ -53,7 +53,7 @@ The client uploads a file and gets an immediate response. The server transcribes
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/<pranjalishantveer>/ai-meeting-assistant.git
+git clone https://github.com/pranjalishantveer/ai-meeting-assistant.git
 cd ai-meeting-assistant
 
 cd server && npm install
