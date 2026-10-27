@@ -1,0 +1,81 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// One row per registered account. Only a bcrypt hash of the password is stored.
+model User {
+  id           String    @id @default(uuid())
+  name         String
+  email        String    @unique // stored lowercase, so lookups are case-insensitive
+  passwordHash String
+  createdAt    DateTime  @default(now())
+  meetings     Meeting[]
+
+  @@map("users")
+}
+
+// One row per recorded/uploaded meeting.
+model Meeting {
+  id        String   @id @default(uuid())
+  title     String
+  status    String   @default("pending") // pending | transcribing | summarizing | done | failed
+  audioPath String // filename on disk under server/uploads/, set at upload time
+  language  String   @default("en") // language the transcript was requested in (see src/languages.ts)
+  createdAt DateTime @default(now())
+
+  // Optional so recordings uploaded before accounts existed can still live in the table.
+  // Every new recording is created with an owner.
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  segments    TranscriptSegment[]
+  summary     Summary?
+  actionItems ActionItem[]
+
+  @@index([userId])
+  @@map("meetings")
+}
+
+// One row per chunk of transcribed speech, in order.
+model TranscriptSegment {
+  id        String   @id @default(uuid())
+  meetingId String
+  meeting   Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  speaker   String? // filled in once diarization (Phase 7) is added; null until then
+  text      String
+  startMs   Int? // start offset in the audio, in milliseconds
+  createdAt DateTime @default(now())
+
+  @@index([meetingId])
+  @@map("transcript_segments")
+}
+
+// One summary per meeting (LLM-generated key points).
+model Summary {
+  id        String   @id @default(uuid())
+  meetingId String   @unique
+  meeting   Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  text      String
+  createdAt DateTime @default(now())
+
+  @@map("summaries")
+}
+
+// One row per action item extracted from a meeting.
+model ActionItem {
+  id        String   @id @default(uuid())
+  meetingId String
+  meeting   Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  text      String
+  assignee  String?
+  done      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([meetingId])
+  @@map("action_items")
+}

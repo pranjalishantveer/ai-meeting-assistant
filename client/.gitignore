@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Secrets: never commit these
+.env
+.env.*
+!.env.example
+
+# Uploaded recordings (private data)
+uploads/
+server/uploads/
+
+# Build output and logs
+dist/
+build/
+*.log
+*.tsbuildinfo
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.vscode/
